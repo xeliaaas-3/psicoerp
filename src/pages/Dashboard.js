@@ -104,7 +104,7 @@ export default function Dashboard() {
 
   const nombreCompleto = perfil?.nombre
     ? `${perfil.nombre} ${perfil.apellido || ''}`.trim()
-    : 'Lic'
+    : 'Doctora'
 
   const fechaHoy = format(new Date(), "EEEE d 'de' MMMM", { locale: es })
 
@@ -140,8 +140,8 @@ export default function Dashboard() {
         </div>
         <div className="stat-card">
           <div className="stat-label">Cobro pendiente</div>
-          <div className="stat-value" style={{ fontSize: stats.pendienteCobro > 999999 ? 20 : 28 }}>
-            ${stats.pendienteCobro.toLocaleString('es-AR')}
+          <div className="stat-value" style={{ fontSize: stats.pendienteCobro > 9999999 ? 18 : 24 }}>
+            Gs. {Math.round(stats.pendienteCobro).toLocaleString('es-PY')}
           </div>
           <span className="pill pill-amber">a cobrar</span>
         </div>

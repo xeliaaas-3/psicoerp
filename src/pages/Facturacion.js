@@ -15,8 +15,6 @@ const TIPO_SERVICIO = {
 const METODO_PAGO = {
   efectivo: 'Efectivo',
   transferencia: 'Transferencia',
-  tarjeta: 'Tarjeta',
-  mercadopago: 'MercadoPago',
   otro: 'Otro',
 }
 
@@ -163,7 +161,7 @@ export default function Facturacion() {
   const totalCobrado = pagos.filter(p => p.estado === 'pagado').reduce((s, p) => s + parseFloat(p.monto || 0), 0)
   const totalPendiente = pagos.filter(p => p.estado === 'pendiente').reduce((s, p) => s + parseFloat(p.monto || 0), 0)
   const totalVencido = pagos.filter(p => p.estado === 'vencido').reduce((s, p) => s + parseFloat(p.monto || 0), 0)
-  const fmt = (n) => `$${n.toLocaleString('es-AR')}`
+  const fmt = (n) => `Gs. ${Math.round(n).toLocaleString('es-PY')}`
 
   return (
     <>
