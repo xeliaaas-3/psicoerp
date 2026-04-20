@@ -87,12 +87,6 @@ export default function Login() {
           </button>
         </form>
 
-        <p style={{ marginTop: 20, fontSize: 12, color: 'var(--muted)', textAlign: 'center' }}>
-          ¿Primera vez? Creá tu cuenta desde{' '}
-          <a href="https://supabase.com" target="_blank" rel="noreferrer" style={{ color: 'var(--sage)' }}>
-            el panel de Supabase
-          </a>
-        </p>
       </div>
     </div>
   )
