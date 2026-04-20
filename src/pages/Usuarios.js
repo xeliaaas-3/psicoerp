@@ -21,50 +21,41 @@ const ROL_DESCRIPCION = {
 }
 
 function ModalUsuario({ onClose, onSaved }) {
-  const [form, setForm] = useState({ nombre: '', apellido: '', email: '', password: '', rol: 'secretaria' })
+  const [form, setForm] = useState({ nombre: '', apellido: '', usuario: '', password: '', rol: 'secretaria' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [exito, setExito] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  // Convertimos el nombre de usuario en un email ficticio interno
+  // Así Supabase lo acepta sin mandar correo de verificación
+  const toEmail = (usuario) => `${usuario.toLowerCase().replace(/\s+/g, '.')}@consultorio.local`
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!form.usuario.trim()) { setError('Ingresá un nombre de usuario'); return }
     if (form.password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
     setError('')
     setLoading(true)
 
-    // Crear usuario en Supabase Auth
-    const { data, error: authError } = await supabase.auth.admin.createUser({
-      email: form.email,
+    const emailFicticio = toEmail(form.usuario)
+
+    const { data: signData, error: signError } = await supabase.auth.signUp({
+      email: emailFicticio,
       password: form.password,
-      email_confirm: true,
+      options: { data: { nombre: form.nombre, apellido: form.apellido } }
     })
 
-    if (authError) {
-      // Si no tenemos permisos admin, usamos signUp y luego actualizamos el perfil
-      const { data: signData, error: signError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-      })
+    if (signError) {
+      setError('Error al crear usuario: ' + signError.message)
+      setLoading(false)
+      return
+    }
 
-      if (signError) {
-        setError('Error al crear usuario: ' + signError.message)
-        setLoading(false)
-        return
-      }
-
-      if (signData?.user) {
-        await supabase.from('perfiles').upsert({
-          id: signData.user.id,
-          nombre: form.nombre,
-          apellido: form.apellido,
-          rol: form.rol,
-        })
-      }
-    } else if (data?.user) {
+    if (signData?.user) {
       await supabase.from('perfiles').upsert({
-        id: data.user.id,
+        id: signData.user.id,
         nombre: form.nombre,
         apellido: form.apellido,
         rol: form.rol,
@@ -73,11 +64,96 @@ function ModalUsuario({ onClose, onSaved }) {
 
     setExito(true)
     setLoading(false)
-    setTimeout(() => { onSaved(); onClose() }, 2000)
+    setTimeout(() => { onSaved(); onClose() }, 2500)
   }
 
   return (
     <div className="modal-overlay">
+      <div className="modal">
+        <div className="modal-header">
+          <div className="modal-title">Crear usuario</div>
+          <button className="btn-close" onClick={onClose}>
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            {error && <div className="alert alert-error">{error}</div>}
+            {exito && (
+              <div className="alert alert-success">
+                ✅ Usuario creado. Puede ingresar con su nombre de usuario y contraseña.
+              </div>
+            )}
+
+            <div className="form-grid-2">
+              <div className="form-group">
+                <label className="form-label">Nombre</label>
+                <input className="input" value={form.nombre} onChange={e => set('nombre', e.target.value)} placeholder="Ana" autoFocus />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Apellido</label>
+                <input className="input" value={form.apellido} onChange={e => set('apellido', e.target.value)} placeholder="García" />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Nombre de usuario *</label>
+              <input
+                className="input"
+                value={form.usuario}
+                onChange={e => set('usuario', e.target.value.replace(/[^a-zA-Z0-9._-]/g, ''))}
+                required
+                placeholder="secretaria (sin espacios)"
+              />
+              {form.usuario && (
+                <div className="form-hint">
+                  Ingresará con: <strong>{form.usuario.toLowerCase()}</strong>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Contraseña *</label>
+              <input className="input" type="password" value={form.password} onChange={e => set('password', e.target.value)} required placeholder="Mínimo 6 caracteres" />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Rol *</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                {Object.entries(ROL_LABEL).map(([rol, label]) => (
+                  <div key={rol} onClick={() => set('rol', rol)} style={{
+                    border: `1.5px solid ${form.rol === rol ? 'var(--sage)' : 'var(--border-2)'}`,
+                    borderRadius: 10, padding: '10px 14px', cursor: 'pointer',
+                    background: form.rol === rol ? 'var(--sage-pale)' : 'white', transition: 'all .15s',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: form.rol === rol ? 'var(--sage)' : 'var(--ink)' }}>{label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{ROL_DESCRIPCION[rol]}</div>
+                    </div>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                      border: `2px solid ${form.rol === rol ? 'var(--sage)' : 'var(--border-2)'}`,
+                      background: form.rol === rol ? 'var(--sage)' : 'white',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {form.rol === rol && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" disabled={loading || exito}>
+              {loading ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />Creando...</> : 'Crear usuario'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
       <div className="modal">
         <div className="modal-header">
           <div className="modal-title">Invitar usuario</div>

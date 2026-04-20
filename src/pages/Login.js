@@ -14,9 +14,11 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await login(email, password)
+    // Si no tiene @ asumimos que es nombre de usuario interno
+    const emailFinal = email.includes('@') ? email : `${email.toLowerCase()}@consultorio.local`
+    const { error } = await login(emailFinal, password)
     if (error) {
-      setError('Email o contraseña incorrectos. Verificá tus datos.')
+      setError('Usuario o contraseña incorrectos.')
       setLoading(false)
     } else {
       navigate('/')
@@ -55,11 +57,11 @@ export default function Login() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">Usuario o email</label>
             <input
               className="input"
-              type="email"
-              placeholder="tu@email.com"
+              type="text"
+              placeholder="secretaria  ó  tu@email.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -87,6 +89,12 @@ export default function Login() {
           </button>
         </form>
 
+        <p style={{ marginTop: 20, fontSize: 12, color: 'var(--muted)', textAlign: 'center' }}>
+          ¿Primera vez? Creá tu cuenta desde{' '}
+          <a href="https://supabase.com" target="_blank" rel="noreferrer" style={{ color: 'var(--sage)' }}>
+            el panel de Supabase
+          </a>
+        </p>
       </div>
     </div>
   )
