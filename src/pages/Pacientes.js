@@ -95,8 +95,8 @@ function ModalPaciente({ paciente, onClose, onSaved }) {
                 <input className="input" type="date" value={form.fecha_nacimiento || ''} onChange={e => set('fecha_nacimiento', e.target.value)} />
               </div>
               <div className="form-group">
-                <label className="form-label">DNI</label>
-                <input className="input" value={form.dni || ''} onChange={e => set('dni', e.target.value)} placeholder="12.345.678" />
+                <label className="form-label">CI</label>
+                <input className="input" value={form.dni || ''} onChange={e => set('dni', e.target.value)} placeholder="5.678.321" />
               </div>
               <div className="form-group">
                 <label className="form-label">Estado</label>
@@ -111,7 +111,7 @@ function ModalPaciente({ paciente, onClose, onSaved }) {
             <div className="form-grid-2">
               <div className="form-group">
                 <label className="form-label">Teléfono</label>
-                <input className="input" value={form.telefono || ''} onChange={e => set('telefono', e.target.value)} placeholder="+54 9 11 1234-5678" />
+                <input className="input" value={form.telefono || ''} onChange={e => set('telefono', e.target.value)} placeholder="+595 981 874 695" />
               </div>
               <div className="form-group">
                 <label className="form-label">Email</label>
@@ -120,7 +120,7 @@ function ModalPaciente({ paciente, onClose, onSaved }) {
             </div>
             <div className="form-group">
               <label className="form-label">Dirección</label>
-              <input className="input" value={form.direccion || ''} onChange={e => set('direccion', e.target.value)} placeholder="Av. Corrientes 1234, CABA" />
+              <input className="input" value={form.direccion || ''} onChange={e => set('direccion', e.target.value)} placeholder="Av. 15 de mayo, Resquin" />
             </div>
             <div className="form-grid-2">
               <div className="form-group">
