@@ -104,7 +104,7 @@ export default function Dashboard() {
 
   const nombreCompleto = perfil?.nombre
     ? `${perfil.nombre} ${perfil.apellido || ''}`.trim()
-    : 'Doctora'
+    : 'Lic'
 
   const fechaHoy = format(new Date(), "EEEE d 'de' MMMM", { locale: es })
 
