@@ -137,8 +137,8 @@ export default function Facturacion() {
   async function cargar() {
     setLoading(true)
     const [pagosRes, pacsRes] = await Promise.all([
-      supabase.from('pagos').select('*, pacientes(nombre, apellido)').eq('psicologo_id', user.id).order('fecha', { ascending: false }),
-      supabase.from('pacientes').select('id, nombre, apellido').eq('psicologo_id', user.id).order('apellido'),
+      supabase.from('pagos').select('*, pacientes(nombre, apellido)').order('fecha', { ascending: false }),
+      supabase.from('pacientes').select('id, nombre, apellido').order('apellido'),
     ])
     setPagos(pagosRes.data || [])
     setPacientes(pacsRes.data || [])

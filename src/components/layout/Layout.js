@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 
-// ── Íconos con estilos correctos ─────────────────────────
+// ── Íconos ───────────────────────────────────────────────
 const IconGrid     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
 const IconCalendar = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 const IconUsers    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -139,7 +139,7 @@ function ModalPerfil({ perfil, onClose, onSaved }) {
             </div>
             <div className="form-group">
               <label className="form-label">Teléfono</label>
-              <input className="input" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="+54 9 11 1234-5678" />
+              <input className="input" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="0981 123 456" />
             </div>
           </div>
           <div className="modal-footer">
@@ -188,8 +188,43 @@ export default function Layout() {
     </button>
   )
 
+  // Menú desplegable (compartido entre desktop y móvil)
+  const MenuDesplegable = ({ bottom, right, top }) => (
+    <>
+      <div onClick={() => setMenuAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
+      <div style={{
+        position: 'absolute',
+        bottom: bottom || 'auto',
+        top: top || 'auto',
+        right: right || 0,
+        left: right ? 'auto' : 0,
+        background: 'white',
+        border: '1px solid var(--border-2)',
+        borderRadius: 12,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.13)',
+        overflow: 'hidden',
+        zIndex: 200,
+        minWidth: 200,
+      }}>
+        <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>{nombreMostrado}</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)' }}>{ROL_LABEL[rol]}</div>
+        </div>
+        <MenuItem onClick={() => { setModalPerfil(true); setMenuAbierto(false) }} icon={<IconUser />} label="Mi perfil" />
+        <MenuItem onClick={() => { setModalPassword(true); setMenuAbierto(false) }} icon={<IconKey />} label="Cambiar contraseña" />
+        {!esSecretaria && (
+          <MenuItem onClick={() => { navigate('/usuarios'); setMenuAbierto(false) }} icon={<IconShield />} label="Usuarios" />
+        )}
+        <div style={{ height: 1, background: 'var(--border)' }} />
+        <MenuItem onClick={handleLogout} icon={<IconLogout />} label="Cerrar sesión" color="var(--danger)" />
+      </div>
+    </>
+  )
+
   return (
     <div className="app-layout">
+
+      {/* ── Sidebar — solo desktop ────────────────────────── */}
       <aside className="sidebar">
         <div className="sidebar-logo">
           <div className="logo-mark"><IconBrain /></div>
@@ -244,52 +279,26 @@ export default function Layout() {
           )}
         </nav>
 
-        {/* Panel de usuario */}
+        {/* Chip usuario desktop */}
         <div className="sidebar-user">
           <div style={{ position: 'relative' }}>
-
-            {/* Menú desplegable */}
-            {menuAbierto && (
-              <>
-                <div onClick={() => setMenuAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
-                <div style={{
-                  position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, right: 0,
-                  background: 'white', border: '1px solid var(--border-2)',
-                  borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                  overflow: 'hidden', zIndex: 100,
-                }}>
-                  <MenuItem onClick={() => { setModalPerfil(true); setMenuAbierto(false) }} icon={<IconUser />} label="Mi perfil" />
-                  <MenuItem onClick={() => { setModalPassword(true); setMenuAbierto(false) }} icon={<IconKey />} label="Cambiar contraseña" />
-                  <div style={{ height: 1, background: 'var(--border)' }} />
-                  <MenuItem onClick={handleLogout} icon={<IconLogout />} label="Cerrar sesión" color="var(--danger)" />
-                </div>
-              </>
-            )}
-
-            {/* Chip de usuario */}
-            <div
-              onClick={() => setMenuAbierto(m => !m)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 9, padding: '10px 11px',
-                borderRadius: 10, cursor: 'pointer', userSelect: 'none',
-                background: menuAbierto ? '#C8EDCF' : 'var(--sage-pale)', transition: 'background .15s',
-              }}
-            >
+            {menuAbierto && <MenuDesplegable bottom="calc(100% + 6px)" />}
+            <div onClick={() => setMenuAbierto(m => !m)} style={{
+              display: 'flex', alignItems: 'center', gap: 9, padding: '10px 11px',
+              borderRadius: 10, cursor: 'pointer', userSelect: 'none',
+              background: menuAbierto ? '#C8EDCF' : 'var(--sage-pale)', transition: 'background .15s',
+            }}>
               <div style={{
                 width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                 background: 'var(--sage)', color: 'white',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 13, fontWeight: 700,
-              }}>
-                {initiales}
-              </div>
+              }}>{initiales}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {nombreMostrado}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--sage)', fontWeight: 500 }}>
-                  {ROL_LABEL[rol] || 'Usuario'}
-                </div>
+                <div style={{ fontSize: 11, color: 'var(--sage)', fontWeight: 500 }}>{ROL_LABEL[rol] || 'Usuario'}</div>
               </div>
               <IconChevron up={menuAbierto} />
             </div>
@@ -297,13 +306,83 @@ export default function Layout() {
         </div>
       </aside>
 
+      {/* ── Contenido principal ───────────────────────────── */}
       <main className="main-content">
+
+        {/* Header móvil — oculto en desktop via CSS */}
+        <div className="mobile-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 30, height: 30, background: 'var(--sage)', borderRadius: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <IconBrain />
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 600 }}>PsicoGestión</span>
+          </div>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setMenuAbierto(m => !m)}
+              style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'var(--sage)', color: 'white', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              }}
+            >{initiales}</button>
+            {menuAbierto && <MenuDesplegable top="calc(100% + 6px)" right="0" />}
+          </div>
+        </div>
+
         <Outlet />
       </main>
 
+      {/* ── Bottom nav — solo móvil via CSS ───────────────── */}
+      <nav className="bottom-nav">
+        {!esSecretaria && (
+          <NavLink to="/" end className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            Inicio
+          </NavLink>
+        )}
+        <NavLink to="/agenda" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Agenda
+        </NavLink>
+        <NavLink to="/pacientes" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Pacientes
+        </NavLink>
+        {!esSecretaria && (
+          <NavLink to="/fichas" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Fichas
+          </NavLink>
+        )}
+        {!esSecretaria && (
+          <NavLink to="/facturacion" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Cobros
+          </NavLink>
+        )}
+        <button className="bottom-nav-item" onClick={() => setMenuAbierto(m => !m)}>
+          <div style={{
+            width: 26, height: 26, borderRadius: '50%',
+            background: 'var(--sage)', color: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 700,
+          }}>{initiales}</div>
+          Perfil
+        </button>
+      </nav>
+
       {modalPassword && <ModalPassword onClose={() => setModalPassword(false)} />}
       {modalPerfil && perfil && (
-        <ModalPerfil perfil={perfil} onClose={() => setModalPerfil(false)} onSaved={() => window.location.reload()} />
+        <ModalPerfil
+          perfil={perfil}
+          onClose={() => setModalPerfil(false)}
+          onSaved={() => window.location.reload()}
+        />
       )}
     </div>
   )

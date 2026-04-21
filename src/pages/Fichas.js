@@ -153,7 +153,7 @@ export default function Fichas() {
 
   async function cargarPacientes() {
     setLoading(true)
-    const { data } = await supabase.from('pacientes').select('*').eq('psicologo_id', user.id).order('apellido')
+    const { data } = await supabase.from('pacientes').select('*').order('apellido')
     setPacientes(data || [])
     if (data?.length) setPacienteSeleccionado(data[0])
     setLoading(false)

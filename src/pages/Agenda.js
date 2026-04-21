@@ -144,8 +144,8 @@ export default function Agenda() {
     const fin = format(endOfMonth(mesActual), 'yyyy-MM-dd')
 
     const [turnosRes, pacsRes] = await Promise.all([
-      supabase.from('turnos').select('*, pacientes(nombre, apellido)').eq('psicologo_id', user.id).gte('fecha', inicio).lte('fecha', fin).order('hora'),
-      supabase.from('pacientes').select('id, nombre, apellido').eq('psicologo_id', user.id).neq('estado', 'alta').order('apellido'),
+      supabase.from('turnos').select('*, pacientes(nombre, apellido)').gte('fecha', inicio).lte('fecha', fin).order('hora'),
+      supabase.from('pacientes').select('id, nombre, apellido').neq('estado', 'alta').order('apellido'),
     ])
 
     setTurnos(turnosRes.data || [])

@@ -48,11 +48,11 @@ export default function Dashboard() {
     const inicioMes = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd')
 
     const [pacsRes, turnosSemRes, turnosHoyRes, pagosRes, sesionesRes] = await Promise.all([
-      supabase.from('pacientes').select('id', { count: 'exact' }).eq('psicologo_id', user.id).neq('estado', 'alta'),
-      supabase.from('turnos').select('id', { count: 'exact' }).eq('psicologo_id', user.id).gte('fecha', inicioSemana).lte('fecha', finSemana).neq('estado', 'cancelado'),
-      supabase.from('turnos').select('*, pacientes(nombre, apellido)').eq('psicologo_id', user.id).eq('fecha', hoy).order('hora'),
-      supabase.from('pagos').select('monto').eq('psicologo_id', user.id).eq('estado', 'pendiente'),
-      supabase.from('sesiones').select('id', { count: 'exact' }).eq('psicologo_id', user.id).gte('fecha', inicioMes),
+      supabase.from('pacientes').select('id', { count: 'exact' }).neq('estado', 'alta'),
+      supabase.from('turnos').select('id', { count: 'exact' }).gte('fecha', inicioSemana).lte('fecha', finSemana).neq('estado', 'cancelado'),
+      supabase.from('turnos').select('*, pacientes(nombre, apellido)').eq('fecha', hoy).order('hora'),
+      supabase.from('pagos').select('monto').eq('estado', 'pendiente'),
+      supabase.from('sesiones').select('id', { count: 'exact' }).gte('fecha', inicioMes),
     ])
 
     const pendienteCobro = (pagosRes.data || []).reduce((sum, p) => sum + parseFloat(p.monto || 0), 0)
@@ -68,8 +68,8 @@ export default function Dashboard() {
 
     // Alertas: pagos vencidos y pacientes sin sesión en 3 semanas
     const [pagosVenc, ultimasSes] = await Promise.all([
-      supabase.from('pagos').select('*, pacientes(nombre, apellido)').eq('psicologo_id', user.id).eq('estado', 'vencido').limit(3),
-      supabase.from('pacientes').select('id, nombre, apellido').eq('psicologo_id', user.id).eq('estado', 'activo'),
+      supabase.from('pagos').select('*, pacientes(nombre, apellido)').eq('estado', 'vencido').limit(3),
+      supabase.from('pacientes').select('id, nombre, apellido').eq('estado', 'activo'),
     ])
 
     const alertasGeneradas = []
