@@ -3,20 +3,19 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  addDays, isSameMonth, isToday, isSameDay, addMonths, subMonths, parseISO
+  addDays, isSameMonth, isToday, isSameDay, addMonths, subMonths
 } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const ESTADO_TURNO = {
-  pendiente: { label: 'Pendiente', pill: 'pill-amber' },
+  pendiente:  { label: 'Pendiente',  pill: 'pill-amber' },
   confirmado: { label: 'Confirmado', pill: 'pill-green' },
-  cancelado: { label: 'Cancelado', pill: 'pill-red' },
-  realizado: { label: 'Realizado', pill: 'pill-gray' },
-  ausente: { label: 'Ausente', pill: 'pill-red' },
+  cancelado:  { label: 'Cancelado',  pill: 'pill-red'   },
+  realizado:  { label: 'Realizado',  pill: 'pill-gray'  },
+  ausente:    { label: 'Ausente',    pill: 'pill-red'   },
 }
 
-const TIPO_TURNO = { presencial: 'Presencial', virtual: 'Virtual' }
-
+// ── Modal nuevo/editar turno ──────────────────────────────
 function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
   const { user } = useAuth()
   const [form, setForm] = useState({
@@ -27,7 +26,6 @@ function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleSubmit = async (e) => {
@@ -38,26 +36,27 @@ function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
     const data = { ...form, psicologo_id: user.id }
     delete data.id; delete data.created_at; delete data.updated_at; delete data.pacientes
 
-    let res
-    if (turno?.id) {
-      res = await supabase.from('turnos').update(data).eq('id', turno.id)
-    } else {
-      res = await supabase.from('turnos').insert(data)
-    }
+    const res = turno?.id
+      ? await supabase.from('turnos').update(data).eq('id', turno.id)
+      : await supabase.from('turnos').insert(data)
 
     if (res.error) { setError(res.error.message); setLoading(false) }
     else { onSaved(); onClose() }
   }
 
+  const fechaDisplay = form.fecha
+    ? format(new Date(form.fecha + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })
+    : ''
+
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
+    <div className="modal-overlay">
+      <div className="modal" style={{ maxWidth: 500 }}>
         <div className="modal-header">
-          <div className="modal-title">
-            {turno?.id ? 'Editar turno' : 'Nuevo turno'}
-            {!turno?.id && form.fecha && (
-              <div style={{ fontSize: 13, fontWeight: 400, color: 'var(--sage)', marginTop: 2, textTransform: 'capitalize' }}>
-                {format(new Date(form.fecha + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })}
+          <div>
+            <div className="modal-title">{turno?.id ? 'Editar turno' : 'Nuevo turno'}</div>
+            {!turno?.id && fechaDisplay && (
+              <div style={{ fontSize: 13, color: 'var(--sage)', fontWeight: 500, marginTop: 2, textTransform: 'capitalize' }}>
+                📅 {fechaDisplay}
               </div>
             )}
           </div>
@@ -68,6 +67,7 @@ function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && <div className="alert alert-error">{error}</div>}
+
             <div className="form-group">
               <label className="form-label">Paciente *</label>
               <select className="select" value={form.paciente_id} onChange={e => set('paciente_id', e.target.value)} required>
@@ -77,6 +77,7 @@ function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
                 ))}
               </select>
             </div>
+
             <div className="form-grid-2">
               <div className="form-group">
                 <label className="form-label">Fecha *</label>
@@ -87,9 +88,10 @@ function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
                 <input className="input" type="time" value={form.hora} onChange={e => set('hora', e.target.value)} required />
               </div>
             </div>
+
             <div className="form-grid-2">
               <div className="form-group">
-                <label className="form-label">Duración (minutos)</label>
+                <label className="form-label">Duración</label>
                 <select className="select" value={form.duracion_minutos} onChange={e => set('duracion_minutos', parseInt(e.target.value))}>
                   {[30, 45, 60, 90, 120].map(d => <option key={d} value={d}>{d} min</option>)}
                 </select>
@@ -101,25 +103,32 @@ function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
                 </select>
               </div>
             </div>
+
             <div className="form-group">
               <label className="form-label">Modalidad</label>
               <div className="radio-cards">
                 {['presencial', 'virtual'].map(t => (
-                  <button key={t} type="button" className={`radio-card ${form.tipo === t ? 'selected' : ''}`} onClick={() => set('tipo', t)}>
+                  <button key={t} type="button"
+                    className={`radio-card ${form.tipo === t ? 'selected' : ''}`}
+                    onClick={() => set('tipo', t)}
+                  >
                     {t === 'presencial' ? '🏥 Presencial' : '💻 Virtual'}
                   </button>
                 ))}
               </div>
             </div>
+
             <div className="form-group">
-              <label className="form-label">Notas del turno</label>
-              <textarea className="textarea" rows={2} value={form.notas || ''} onChange={e => set('notas', e.target.value)} placeholder="Ej: Traer estudios previos, sesión de seguimiento..." />
+              <label className="form-label">Notas</label>
+              <textarea className="textarea" rows={2} value={form.notas || ''} onChange={e => set('notas', e.target.value)} placeholder="Ej: Traer estudios, sesión de seguimiento..." />
             </div>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />Guardando...</> : (turno?.id ? 'Guardar cambios' : 'Crear turno')}
+              {loading
+                ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />Guardando...</>
+                : turno?.id ? 'Guardar cambios' : 'Agendar turno'}
             </button>
           </div>
         </form>
@@ -128,6 +137,48 @@ function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
   )
 }
 
+// ── Tarjeta de turno en el panel lateral ─────────────────
+function TurnoCard({ t, onEditar, onEliminar }) {
+  const esVirtual = t.tipo === 'virtual'
+  return (
+    <div style={{
+      border: '1px solid var(--border)',
+      borderLeft: `4px solid ${esVirtual ? '#378ADD' : 'var(--sage)'}`,
+      borderRadius: 10, padding: '12px 14px',
+      background: 'white', transition: 'box-shadow .15s',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 5 }}>
+            {t.hora?.slice(0, 5)} — {t.pacientes?.nombre} {t.pacientes?.apellido}
+          </div>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            <span className={`pill ${esVirtual ? 'pill-blue' : 'pill-sage'}`} style={{ fontSize: 10 }}>
+              {esVirtual ? 'Virtual' : 'Presencial'}
+            </span>
+            <span className={`pill ${ESTADO_TURNO[t.estado]?.pill}`} style={{ fontSize: 10 }}>
+              {ESTADO_TURNO[t.estado]?.label}
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--muted)' }}>{t.duracion_minutos} min</span>
+          </div>
+          {t.notas && (
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6, lineHeight: 1.4 }}>{t.notas}</div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+          <button className="ic-btn" title="Editar" onClick={() => onEditar(t)}>
+            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button className="ic-btn danger" title="Eliminar" onClick={() => onEliminar(t.id)}>
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Página principal ──────────────────────────────────────
 export default function Agenda() {
   const { user } = useAuth()
   const [mesActual, setMesActual] = useState(new Date())
@@ -138,23 +189,23 @@ export default function Agenda() {
   const [editando, setEditando] = useState(null)
   const [diaSeleccionado, setDiaSeleccionado] = useState(new Date())
   const [turnosDia, setTurnosDia] = useState([])
+  // En móvil, alternar entre vista calendario y lista del día
+  const [vistaMovil, setVistaMovil] = useState('calendario') // 'calendario' | 'dia'
 
   useEffect(() => { cargar() }, [mesActual])
   useEffect(() => {
-    const dia = format(diaSeleccionado, 'yyyy-MM-dd')
-    setTurnosDia(turnos.filter(t => t.fecha === dia))
+    const key = format(diaSeleccionado, 'yyyy-MM-dd')
+    setTurnosDia(turnos.filter(t => t.fecha === key))
   }, [diaSeleccionado, turnos])
 
   async function cargar() {
     setLoading(true)
     const inicio = format(startOfMonth(mesActual), 'yyyy-MM-dd')
     const fin = format(endOfMonth(mesActual), 'yyyy-MM-dd')
-
     const [turnosRes, pacsRes] = await Promise.all([
       supabase.from('turnos').select('*, pacientes(nombre, apellido)').gte('fecha', inicio).lte('fecha', fin).order('hora'),
       supabase.from('pacientes').select('id, nombre, apellido').neq('estado', 'alta').order('apellido'),
     ])
-
     setTurnos(turnosRes.data || [])
     setPacientes(pacsRes.data || [])
     setLoading(false)
@@ -166,24 +217,31 @@ export default function Agenda() {
     cargar()
   }
 
-  // Construir grilla del calendario
+  const abrirModal = (turno = null) => { setEditando(turno); setModalOpen(true) }
+
+  const seleccionarDia = (dia, esMes) => {
+    setDiaSeleccionado(dia)
+    if (window.innerWidth < 768) setVistaMovil('dia') // en móvil va directo a lista del día
+  }
+
+  // Grilla calendario
   const inicio = startOfWeek(startOfMonth(mesActual), { weekStartsOn: 0 })
   const fin = endOfWeek(endOfMonth(mesActual), { weekStartsOn: 0 })
   const dias = []
   let cur = inicio
   while (cur <= fin) { dias.push(cur); cur = addDays(cur, 1) }
 
-  const turnosPorDia = (fecha) => {
-    const key = format(fecha, 'yyyy-MM-dd')
-    return turnos.filter(t => t.fecha === key)
-  }
+  const turnosPorDia = (fecha) => turnos.filter(t => t.fecha === format(fecha, 'yyyy-MM-dd'))
 
   const coloresTurno = (tipo) => tipo === 'virtual'
     ? { bg: '#EBF5FB', color: '#1A5276' }
     : { bg: '#D8F3DC', color: '#2D6A4F' }
 
+  const fechaDiaLabel = format(diaSeleccionado, "EEEE d 'de' MMMM", { locale: es })
+
   return (
     <>
+      {/* ── Header ─────────────────────────────────────── */}
       <div className="page-header">
         <div>
           <div className="page-title">Agenda</div>
@@ -192,134 +250,177 @@ export default function Agenda() {
           </div>
         </div>
         <div className="header-actions">
-          <button className="btn btn-ghost" onClick={() => setMesActual(m => subMonths(m, 1))}>← Anterior</button>
-          <button className="btn btn-ghost" onClick={() => setMesActual(new Date())}>Hoy</button>
-          <button className="btn btn-ghost" onClick={() => setMesActual(m => addMonths(m, 1))}>Siguiente →</button>
-          <button className="btn btn-primary" onClick={() => { setEditando(null); setModalOpen(true) }}>
+          {/* Navegación mes — en móvil solo flechas */}
+          <button className="btn btn-ghost" onClick={() => setMesActual(m => subMonths(m, 1))}>←</button>
+          <button className="btn btn-ghost" onClick={() => { setMesActual(new Date()); setDiaSeleccionado(new Date()) }}>Hoy</button>
+          <button className="btn btn-ghost" onClick={() => setMesActual(m => addMonths(m, 1))}>→</button>
+          <button className="btn btn-primary" onClick={() => abrirModal(null)}>
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuevo turno
+            <span className="hide-mobile">Nuevo turno</span>
+            <span className="show-mobile">Nuevo</span>
           </button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 16 }}>
-        {/* CALENDARIO */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          {/* Cabecera días semana */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'var(--warm)', borderBottom: '1px solid var(--border)' }}>
-            {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => (
-              <div key={d} style={{ textAlign: 'center', padding: '10px 4px', fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{d}</div>
-            ))}
-          </div>
-          {/* Grilla de días */}
-          {loading ? (
-            <div className="loading-spinner"><div className="spinner" />Cargando...</div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-              {dias.map((dia, i) => {
-                const turnosDia = turnosPorDia(dia)
-                const esHoy = isToday(dia)
-                const esMes = isSameMonth(dia, mesActual)
-                const seleccionado = isSameDay(dia, diaSeleccionado)
-                return (
-                  <div key={i}
-                    onClick={() => setDiaSeleccionado(dia)}
-                    onDoubleClick={() => {
-                      if (esMes) {
-                        setEditando(null)
-                        setDiaSeleccionado(dia)
-                        setModalOpen(true)
-                      }
-                    }}
-                    style={{
-                    minHeight: 90, padding: '6px 7px',
-                    borderRight: (i + 1) % 7 !== 0 ? '1px solid var(--border)' : 'none',
-                    borderBottom: i < dias.length - 7 ? '1px solid var(--border)' : 'none',
-                    background: seleccionado ? '#EEF9F3' : esHoy ? '#F0FBF5' : 'white',
-                    cursor: 'pointer',
-                    opacity: esMes ? 1 : .35,
-                    transition: 'background .1s',
-                  }}>
-                    <div style={{
-                      fontSize: 13, fontWeight: 600, marginBottom: 4,
-                      color: esHoy ? 'var(--sage)' : 'var(--ink)',
-                      width: 24, height: 24, borderRadius: '50%',
-                      background: esHoy ? 'var(--sage-pale)' : 'transparent',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>{format(dia, 'd')}</div>
-                    {turnosDia.slice(0, 3).map(t => {
-                      const { bg, color } = coloresTurno(t.tipo)
-                      return (
-                        <div key={t.id} style={{ fontSize: 10, fontWeight: 500, padding: '2px 5px', borderRadius: 4, marginBottom: 2, background: bg, color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {t.hora?.slice(0, 5)} {t.pacientes?.nombre}
-                        </div>
-                      )
-                    })}
-                    {turnosDia.length > 3 && (
-                      <div style={{ fontSize: 10, color: 'var(--muted)', padding: '0 3px' }}>+{turnosDia.length - 3} más</div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+      {/* ── Toggle vista móvil ──────────────────────────── */}
+      <div className="mobile-only" style={{ display: 'none', gap: 8, marginBottom: 14 }}>
+        <button
+          onClick={() => setVistaMovil('calendario')}
+          style={{
+            flex: 1, padding: '9px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+            background: vistaMovil === 'calendario' ? 'var(--sage)' : 'white',
+            color: vistaMovil === 'calendario' ? 'white' : 'var(--muted)',
+            boxShadow: vistaMovil === 'calendario' ? 'none' : '0 0 0 1px var(--border-2)',
+          }}
+        >
+          📅 Calendario
+        </button>
+        <button
+          onClick={() => setVistaMovil('dia')}
+          style={{
+            flex: 1, padding: '9px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+            background: vistaMovil === 'dia' ? 'var(--sage)' : 'white',
+            color: vistaMovil === 'dia' ? 'white' : 'var(--muted)',
+            boxShadow: vistaMovil === 'dia' ? 'none' : '0 0 0 1px var(--border-2)',
+          }}
+        >
+          📋 {fechaDiaLabel.split(' ').slice(0, 2).join(' ')} ({turnosDia.length})
+        </button>
+      </div>
 
-        {/* PANEL LATERAL: turnos del día seleccionado */}
-        <div className="card">
-          <div className="card-header" style={{ marginBottom: 12 }}>
-            <div>
-              <div className="card-title" style={{ textTransform: 'capitalize' }}>
-                {format(diaSeleccionado, "EEEE d", { locale: es })}
-              </div>
-              <div className="card-sub">{turnosDia.length} turno{turnosDia.length !== 1 ? 's' : ''}</div>
-            </div>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => { setEditando(null); setModalOpen(true) }}
-            >
-              + Agendar
-            </button>
-          </div>
+      {/* ── Layout desktop: 2 columnas / móvil: 1 columna ── */}
+      <div className="agenda-layout">
 
-          {/* Hint doble clic */}
-          <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', marginBottom: 10, opacity: .7 }}>
-            💡 Doble clic en el calendario para agendar rápido
-          </div>
-
-          {turnosDia.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>
-              Sin turnos este día
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {turnosDia.sort((a, b) => a.hora > b.hora ? 1 : -1).map(t => (
-                <div key={t.id} style={{
-                  border: '1px solid var(--border)', borderRadius: 9, padding: '10px 12px',
-                  borderLeft: `3px solid ${t.tipo === 'virtual' ? '#378ADD' : 'var(--sage)'}`,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {t.hora?.slice(0, 5)} · {t.pacientes?.nombre} {t.pacientes?.apellido}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                    <span className={`pill ${t.tipo === 'virtual' ? 'pill-blue' : 'pill-sage'}`} style={{ fontSize: 10 }}>{TIPO_TURNO[t.tipo]}</span>
-                    <span className={`pill ${ESTADO_TURNO[t.estado]?.pill}`} style={{ fontSize: 10 }}>{ESTADO_TURNO[t.estado]?.label}</span>
-                    <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 'auto' }}>{t.duracion_minutos} min</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                    <button className="ic-btn" title="Editar" onClick={() => { setEditando(t); setModalOpen(true) }}>
-                      <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button className="ic-btn danger" title="Eliminar" onClick={() => eliminarTurno(t.id)}>
-                      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                    </button>
-                  </div>
-                </div>
+        {/* ── CALENDARIO ─────────────────────────────────── */}
+        <div className={`agenda-cal ${vistaMovil === 'dia' ? 'hide-mobile' : ''}`}>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {/* Días de la semana */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
+              background: 'var(--warm)', borderBottom: '1px solid var(--border)',
+            }}>
+              {['D','L','M','X','J','V','S'].map((d, i) => (
+                <div key={i} style={{
+                  textAlign: 'center', padding: '8px 2px',
+                  fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+                  textTransform: 'uppercase', letterSpacing: '.04em',
+                }}>{d}</div>
               ))}
             </div>
-          )}
+
+            {loading ? (
+              <div className="loading-spinner"><div className="spinner" />Cargando...</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+                {dias.map((dia, i) => {
+                  const td = turnosPorDia(dia)
+                  const esHoy = isToday(dia)
+                  const esMes = isSameMonth(dia, mesActual)
+                  const sel = isSameDay(dia, diaSeleccionado)
+                  return (
+                    <div key={i}
+                      onClick={() => seleccionarDia(dia, esMes)}
+                      onDoubleClick={() => { if (esMes) { setDiaSeleccionado(dia); abrirModal(null) } }}
+                      style={{
+                        minHeight: 72, padding: '5px 4px',
+                        borderRight: (i + 1) % 7 !== 0 ? '1px solid var(--border)' : 'none',
+                        borderBottom: i < dias.length - 7 ? '1px solid var(--border)' : 'none',
+                        background: sel ? 'var(--sage-pale)' : esHoy ? '#F0FBF5' : 'white',
+                        cursor: 'pointer', opacity: esMes ? 1 : .3,
+                        transition: 'background .1s',
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Número del día */}
+                      <div style={{
+                        width: 26, height: 26, borderRadius: '50%', marginBottom: 3,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 12, fontWeight: sel || esHoy ? 700 : 500,
+                        background: esHoy ? 'var(--sage)' : sel ? 'var(--sage-l)' : 'transparent',
+                        color: esHoy || sel ? 'white' : 'var(--ink)',
+                      }}>
+                        {format(dia, 'd')}
+                      </div>
+
+                      {/* Turnos — desktop muestra texto, móvil solo puntos */}
+                      <div className="cal-turnos-desktop">
+                        {td.slice(0, 2).map(t => {
+                          const { bg, color } = coloresTurno(t.tipo)
+                          return (
+                            <div key={t.id} style={{
+                              fontSize: 9, fontWeight: 600, padding: '2px 4px',
+                              borderRadius: 4, marginBottom: 2,
+                              background: bg, color,
+                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                            }}>
+                              {t.hora?.slice(0, 5)} {t.pacientes?.nombre}
+                            </div>
+                          )
+                        })}
+                        {td.length > 2 && (
+                          <div style={{ fontSize: 9, color: 'var(--muted)', paddingLeft: 2 }}>+{td.length - 2}</div>
+                        )}
+                      </div>
+
+                      {/* Móvil: solo puntos de colores */}
+                      <div className="cal-turnos-mobile" style={{ display: 'none', justifyContent: 'center', gap: 3, flexWrap: 'wrap', marginTop: 2 }}>
+                        {td.slice(0, 3).map(t => (
+                          <div key={t.id} style={{
+                            width: 6, height: 6, borderRadius: '50%',
+                            background: t.tipo === 'virtual' ? '#378ADD' : 'var(--sage)',
+                          }} />
+                        ))}
+                        {td.length > 3 && (
+                          <div style={{ fontSize: 8, color: 'var(--muted)' }}>+{td.length - 3}</div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', marginTop: 8, opacity: .7 }}>
+            Toque un día para ver turnos · Doble toque para agendar
+          </div>
+        </div>
+
+        {/* ── PANEL DEL DÍA ──────────────────────────────── */}
+        <div className={`agenda-panel ${vistaMovil === 'calendario' ? 'hide-mobile' : ''}`}>
+          <div className="card" style={{ height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, textTransform: 'capitalize' }}>{fechaDiaLabel}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                  {turnosDia.length === 0 ? 'Sin turnos' : `${turnosDia.length} turno${turnosDia.length !== 1 ? 's' : ''}`}
+                </div>
+              </div>
+              <button className="btn btn-primary btn-sm" onClick={() => abrirModal(null)}>
+                + Agendar
+              </button>
+            </div>
+
+            {turnosDia.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
+                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>Sin turnos este día</div>
+                <button className="btn btn-secondary" onClick={() => abrirModal(null)}>
+                  + Agendar turno
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[...turnosDia].sort((a, b) => a.hora > b.hora ? 1 : -1).map(t => (
+                  <TurnoCard
+                    key={t.id}
+                    t={t}
+                    onEditar={abrirModal}
+                    onEliminar={eliminarTurno}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

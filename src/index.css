@@ -586,7 +586,129 @@ a { text-decoration: none; color: inherit; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes spin { to { transform: rotate(360deg) } }
 
+/* ===== AGENDA LAYOUT ===== */
+.agenda-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.cal-turnos-desktop { display: block; }
+.cal-turnos-mobile  { display: none !important; }
+
+/* ===== FICHAS LAYOUT ===== */
+.fichas-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
 /* ===== RESPONSIVE — MÓVIL ===== */
+@media (max-width: 768px) {
+
+  /* Layout: sidebar → bottom nav */
+  .app-layout { flex-direction: column; height: 100dvh; }
+  .sidebar { display: none; }
+  .main-content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
+
+  /* Bottom nav */
+  .bottom-nav {
+    display: flex !important;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-top: 1px solid var(--border);
+    padding: 8px 0 env(safe-area-inset-bottom, 8px);
+    z-index: 200; box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  }
+
+  .bottom-nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; padding: 4px 6px;
+    border: none; background: none; cursor: pointer;
+    color: var(--muted); font-size: 10px; font-weight: 500;
+    font-family: inherit; transition: color .15s; text-decoration: none;
+  }
+
+  .bottom-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .bottom-nav-item.active { color: var(--sage); }
+  .bottom-nav-item.active svg { stroke: var(--sage); }
+
+  /* Header móvil */
+  .mobile-header {
+    display: flex !important;
+    align-items: center; justify-content: space-between;
+    padding: 14px 16px 10px; background: white;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    margin: -16px -16px 16px;
+  }
+
+  /* Page header */
+  .page-header { flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .page-title { font-size: 18px; }
+  .header-actions { width: 100%; }
+  .header-actions .btn { flex: 1; justify-content: center; }
+
+  /* Stats 2 columnas */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-value { font-size: 22px; }
+
+  /* Cards */
+  .card { padding: 14px; }
+
+  /* Forms: 1 columna */
+  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+
+  /* Tablas scroll */
+  .tabla-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tabla-header, .tabla-row { min-width: 500px; }
+
+  /* Modales: bottom sheet */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal, .modal.modal-lg { max-width: 100%; width: 100%; border-radius: 20px 20px 0 0; max-height: 92dvh; }
+  .modal-body { padding: 16px 18px; }
+  .modal-header, .modal-footer { padding: 16px 18px; }
+
+  /* Login */
+  .login-page { padding: 20px 16px; align-items: flex-start; padding-top: 60px; }
+  .login-card { padding: 28px 20px; border-radius: 16px; }
+
+  /* Radio cards */
+  .radio-cards { flex-direction: column; }
+
+  /* Agenda móvil: 1 columna, toggle */
+  .agenda-layout { grid-template-columns: 1fr; gap: 12px; }
+  .cal-turnos-desktop { display: none !important; }
+  .cal-turnos-mobile  { display: flex !important; }
+  .mobile-only { display: flex !important; }
+  .hide-mobile { display: none !important; }
+
+  /* Calendario en móvil: celdas más compactas */
+  .agenda-cal .card { border-radius: 12px; }
+
+  /* Fichas móvil: 1 columna, toggle */
+  .fichas-layout { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* ===== TABLET ===== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar { width: 200px; }
+  .main-content { padding: 20px 22px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-grid-3 { grid-template-columns: 1fr 1fr; }
+  .agenda-layout { grid-template-columns: 1fr 260px; }
+  .fichas-layout { grid-template-columns: 240px 1fr; }
+}
+
+/* Desktop: ocultar elementos solo-móvil */
+@media (min-width: 769px) {
+  .bottom-nav { display: none; }
+  .mobile-header { display: none; }
+  .mobile-only { display: none !important; }
+  .hide-mobile { display: block; }
+}
+
 @media (max-width: 768px) {
 
   /* Layout: sidebar se convierte en barra inferior */
