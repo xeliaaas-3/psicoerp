@@ -17,13 +17,13 @@ const ESTADO_TURNO = {
 
 const TIPO_TURNO = { presencial: 'Presencial', virtual: 'Virtual' }
 
-function ModalTurno({ turno, pacientes, onClose, onSaved }) {
+function ModalTurno({ turno, pacientes, fechaInicial, onClose, onSaved }) {
   const { user } = useAuth()
   const [form, setForm] = useState({
-    paciente_id: '', fecha: format(new Date(), 'yyyy-MM-dd'), hora: '09:00',
+    paciente_id: '', hora: '09:00',
     duracion_minutos: 60, tipo: 'presencial', estado: 'pendiente', notas: '',
     ...turno,
-    fecha: turno?.fecha || format(new Date(), 'yyyy-MM-dd'),
+    fecha: turno?.fecha || fechaInicial || format(new Date(), 'yyyy-MM-dd'),
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -53,7 +53,14 @@ function ModalTurno({ turno, pacientes, onClose, onSaved }) {
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
-          <div className="modal-title">{turno?.id ? 'Editar turno' : 'Nuevo turno'}</div>
+          <div className="modal-title">
+            {turno?.id ? 'Editar turno' : 'Nuevo turno'}
+            {!turno?.id && form.fecha && (
+              <div style={{ fontSize: 13, fontWeight: 400, color: 'var(--sage)', marginTop: 2, textTransform: 'capitalize' }}>
+                {format(new Date(form.fecha + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })}
+              </div>
+            )}
+          </div>
           <button className="btn-close" onClick={onClose}>
             <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -215,7 +222,16 @@ export default function Agenda() {
                 const esMes = isSameMonth(dia, mesActual)
                 const seleccionado = isSameDay(dia, diaSeleccionado)
                 return (
-                  <div key={i} onClick={() => setDiaSeleccionado(dia)} style={{
+                  <div key={i}
+                    onClick={() => setDiaSeleccionado(dia)}
+                    onDoubleClick={() => {
+                      if (esMes) {
+                        setEditando(null)
+                        setDiaSeleccionado(dia)
+                        setModalOpen(true)
+                      }
+                    }}
+                    style={{
                     minHeight: 90, padding: '6px 7px',
                     borderRight: (i + 1) % 7 !== 0 ? '1px solid var(--border)' : 'none',
                     borderBottom: i < dias.length - 7 ? '1px solid var(--border)' : 'none',
@@ -258,7 +274,17 @@ export default function Agenda() {
               </div>
               <div className="card-sub">{turnosDia.length} turno{turnosDia.length !== 1 ? 's' : ''}</div>
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => { setEditando(null); setModalOpen(true) }}>+ Agregar</button>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => { setEditando(null); setModalOpen(true) }}
+            >
+              + Agendar
+            </button>
+          </div>
+
+          {/* Hint doble clic */}
+          <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', marginBottom: 10, opacity: .7 }}>
+            💡 Doble clic en el calendario para agendar rápido
           </div>
 
           {turnosDia.length === 0 ? (
@@ -301,6 +327,7 @@ export default function Agenda() {
         <ModalTurno
           turno={editando}
           pacientes={pacientes}
+          fechaInicial={format(diaSeleccionado, 'yyyy-MM-dd')}
           onClose={() => setModalOpen(false)}
           onSaved={cargar}
         />

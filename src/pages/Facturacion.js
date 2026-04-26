@@ -82,7 +82,7 @@ function ModalPago({ pago, pacientes, onClose, onSaved }) {
                 <input className="input" type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)} required />
               </div>
               <div className="form-group">
-                <label className="form-label">Monto ($) *</label>
+                <label className="form-label">Monto (Gs) *</label>
                 <input className="input" type="number" min="0" step="0.01" value={form.monto} onChange={e => set('monto', e.target.value)} placeholder="18000" required />
               </div>
             </div>
